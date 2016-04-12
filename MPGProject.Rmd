@@ -1,0 +1,87 @@
+---
+title: "Regression Models Project"
+author: "G. Polzer"
+date: "April 1, 2016"
+output: html_document
+---
+
+**Executive Summary**
+
+In this report, we will analyze mtcars data set and explore the relationship between a set of variables and miles per gallon (MPG). The data was extracted from the 1974 Motor Trend US magazine, and comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973-74 models).
+
+In summary, vehicles with manual transmissions have higher MPG than automatic transmissions on average.
+
+**Exploratory Data Analysis**
+
+First, we load the data set mtcars and change some variables from numeric class to factor class.
+
+```{r}
+library(ggplot2)
+data(mtcars)
+mtcars[1:3, ] # Sample Data
+dim(mtcars)
+mtcars$cyl <- as.factor(mtcars$cyl)
+mtcars$vs <- as.factor(mtcars$vs)
+mtcars$am <- factor(mtcars$am)
+mtcars$gear <- factor(mtcars$gear)
+mtcars$carb <- factor(mtcars$carb)
+attach(mtcars)
+```
+
+Using the null hypothesis as the MPG of the automatic and manual transmissions are from the same population (assuming the MPG has a normal distribution), we can use a two sample T-test to determine whether to accept or reject this hypothesis.
+
+```{r}
+result <- t.test(mpg ~ am)
+result$p.value
+result$estimate
+boxplot(mpg ~ am, data = mtcars, col = (c("red","blue")), ylab = "Miles Per Gallon", xlab = "Transmission Type")
+```
+
+Since the p-value is 0.00137, which is less than 0.05 so we reject our null hypothesis. The mean MPG of manual cars is about 7 more than that of automatic cars.
+
+**Regression Analysis**
+
+In this section, we build linear regression models using different variables in order to find the best fit and compare it with the base model which we have using anova. After model selection, we also perform analysis of residuals.
+
+Model building and selection
+
+Our initial model includes all variables as predictors of mpg. Then we perform stepwise model selection in order to select significant predictors for the final, best model.The step function will perform this selection by calling lm repeatedly to build multiple regression models and select the best variables from them using both forward selection and backward elimination methods using AIC as the selection criteria. 
+
+```{r}
+initialmodel <- lm(mpg ~ ., data = mtcars)
+bestmodel <- step(initialmodel, direction = "both")
+summary(bestmodel)
+```
+
+The adjusted R-squared value of 0.84 which is the maximum obtained considering all combinations of variables. From these results we can conclude that more than 84% of the variability is explained by the above model.
+
+**Model Residuals and Diagnostics**
+
+In this section, we have the residual plots of our regression model along with computation of regression diagnostics for our liner model. This excercise helped us in examining the residuals and finding leverage points to find any potential problems with the model.
+
+```{r}
+par(mfrow=c(2, 2))
+plot(bestmodel)
+```
+
+Following observations are made from the above plots.
+
+- The points in the Residuals vs. Fitted plot are randomly scattered on the plot that verifies the independence condition.
+
+- The Normal Q-Q plot consists of the points which mostly fall on the line indicating that the residuals are normally distributed.
+
+- The Scale-Location plot consists of points scattered in a constant band pattern, indicating constant variance.
+
+- There are some distinct points of interest (outliers or leverage points) in the top right of the plots that may indicate values of increased leverage of outliers.
+
+**Conclusions**
+
+Based on the analysis done in this project, we can conclude that:
+
+- Cars with Manual transmission get 1.8 more miles per gallon compared to cars with Automatic transmission. (1.8 adjusted for hp, cyl, and wt).
+
+- mpg will decrease by 2.5 for every 1000 lb increase in wt.
+
+- mpg decreases negligibly (only 0.32) with every increase of 10 in hp.
+
+- If number of cylinders, cyl increases from 4 to 6 and 8, mpg will decrease by a factor of 3 and 2.2 respectively (adjusted by hp, wt, and am).
